@@ -16,16 +16,17 @@ import { GoTag } from 'react-icons/go';
 // RTK Query Hooklari
 import {
   useGetCurrentUserQuery,
-  useGetUsersQuery, 
+  useGetUsersQuery,
   useAddUserMutation,
   useUpdateUserMutation,
   useDeleteUserMutation,
-  
+
   useGetBooksQuery,
   useAddBookMutation,
   useUpdateBookMutation,
   useDeleteBookMutation,
-  
+  useUploadBookPdfMutation,
+
   useGetAuthorsQuery,
   useUpdateAuthorMutation,
   useDeleteAuthorMutation
@@ -57,9 +58,12 @@ function Dashboard() {
   const [updateUser] = useUpdateUserMutation();
   const [deleteUser] = useDeleteUserMutation();
 
+  const [pdfFile, setPdfFile] = useState(null);
+
   const [addBook] = useAddBookMutation();
   const [updateBook] = useUpdateBookMutation();
   const [deleteBook] = useDeleteBookMutation();
+  const [uploadBookPdf] = useUploadBookPdfMutation();
 
   const [updateAuthor] = useUpdateAuthorMutation();
   const [deleteAuthor] = useDeleteAuthorMutation();
@@ -83,6 +87,7 @@ function Dashboard() {
   const closeModal = () => {
     setModal({ open: false, type: 'add', section: '', data: null });
     setFormData({});
+    setPdfFile(null);
   };
 
   // --- FORM SUBMIT HANDLER ---
@@ -98,11 +103,21 @@ function Dashboard() {
       } 
       else if (modal.section === 'books') {
         if (modal.type === 'add') {
-          await addBook(formData).unwrap();
+          const newBook = await addBook(formData).unwrap();
+          if (pdfFile && newBook?._id) {
+            const fd = new FormData();
+            fd.append('pdf', pdfFile);
+            await uploadBookPdf({ id: newBook._id, formData: fd }).unwrap();
+          }
         } else {
           await updateBook({ id: modal.data._id || modal.data.id, ...formData }).unwrap();
+          if (pdfFile) {
+            const fd = new FormData();
+            fd.append('pdf', pdfFile);
+            await uploadBookPdf({ id: modal.data._id || modal.data.id, formData: fd }).unwrap();
+          }
         }
-      } 
+      }
       else if (modal.section === 'authors') {
         if (modal.type === 'edit') {
           await updateAuthor({ id: modal.data._id || modal.data.id, ...formData }).unwrap();
@@ -382,7 +397,12 @@ function Dashboard() {
       {modal.open && (
         <div className={styles.modalOverlay}>
           <div className={styles.modalContent}>
-            <h2>{modal.type === 'add' ? 'Yangi qo\'shish' : 'Tahrirlash'} ({modal.section.toUpperCase()})</h2>
+            <h2>
+              {modal.section === 'books' && modal.type === 'add' ? 'Add New Book' :
+               modal.section === 'books' && modal.type === 'edit' ? 'Edit Book' :
+               modal.type === 'add' ? `Yangi qo'shish (${modal.section.toUpperCase()})` :
+               `Tahrirlash (${modal.section.toUpperCase()})`}
+            </h2>
             <form onSubmit={handleFormSubmit}>
               
               {/* USERS FORM */}
@@ -414,20 +434,69 @@ function Dashboard() {
               {modal.section === 'books' && (
                 <>
                   <div className={styles.formGroup}>
-                    <label>Kitob Nomi</label>
-                    <input type="text" required value={formData.title || ''} onChange={(e) => setFormData({...formData, title: e.target.value})} />
+                    <label>TITLE</label>
+                    <input type="text" placeholder="Book title" required value={formData.title || ''} onChange={(e) => setFormData({...formData, title: e.target.value})} />
                   </div>
                   <div className={styles.formGroup}>
-                    <label>Muallif Ismi</label>
-                    <input type="text" required value={formData.authorName || ''} onChange={(e) => setFormData({...formData, authorName: e.target.value})} />
+                    <label>AUTHOR *</label>
+                    <input type="text" placeholder="Author nomini yozing..." required value={formData.authorName || ''} onChange={(e) => setFormData({...formData, authorName: e.target.value})} />
                   </div>
                   <div className={styles.formGroup}>
-                    <label>Kategoriya</label>
-                    <input type="text" required value={formData.category || ''} onChange={(e) => setFormData({...formData, category: e.target.value})} />
+                    <label>CATEGORY</label>
+                    <select value={formData.category || ''} onChange={(e) => setFormData({...formData, category: e.target.value})}>
+                      <option value="">Tanlang...</option>
+                      <option value="Fiction">Fiction</option>
+                      <option value="Philosophy">Philosophy</option>
+                      <option value="Drama">Drama</option>
+                      <option value="Science">Science</option>
+                      <option value="History">History</option>
+                      <option value="Biography">Biography</option>
+                      <option value="Thriller">Thriller</option>
+                      <option value="Romance">Romance</option>
+                      <option value="Fantasy">Fantasy</option>
+                      <option value="Self-help">Self-help</option>
+                    </select>
                   </div>
                   <div className={styles.formGroup}>
-                    <label>Reyting</label>
-                    <input type="number" step="0.1" max="5" min="0" required value={formData.rating || ''} onChange={(e) => setFormData({...formData, rating: parseFloat(e.target.value)})} />
+                    <label>RATING</label>
+                    <input type="number" step="0.1" max="5" min="0" placeholder="4.5" value={formData.rating || ''} onChange={(e) => setFormData({...formData, rating: parseFloat(e.target.value)})} />
+                  </div>
+                  <div className={styles.formRow3}>
+                    <div className={styles.formGroup}>
+                      <label>GENRE</label>
+                      <input type="text" placeholder="Drama" value={formData.genre || ''} onChange={(e) => setFormData({...formData, genre: e.target.value})} />
+                    </div>
+                    <div className={styles.formGroup}>
+                      <label>BADGE</label>
+                      <input type="text" placeholder="Bestseller" value={formData.badge || ''} onChange={(e) => setFormData({...formData, badge: e.target.value})} />
+                    </div>
+                    <div className={styles.formGroup}>
+                      <label>COVER COLOR</label>
+                      <input type="text" placeholder="green" value={formData.coverColor || ''} onChange={(e) => setFormData({...formData, coverColor: e.target.value})} />
+                    </div>
+                  </div>
+                  <div className={styles.formRow2}>
+                    <div className={styles.formGroup}>
+                      <label>PAGE COUNT</label>
+                      <input type="number" placeholder="320" value={formData.pageCount || ''} onChange={(e) => setFormData({...formData, pageCount: parseInt(e.target.value)})} />
+                    </div>
+                    <div className={styles.formGroup}>
+                      <label>PUBLISHED YEAR</label>
+                      <input type="number" placeholder="2020" value={formData.publishedYear || ''} onChange={(e) => setFormData({...formData, publishedYear: parseInt(e.target.value)})} />
+                    </div>
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>DESCRIPTION</label>
+                    <textarea rows="3" placeholder="Short description..." value={formData.description || ''} onChange={(e) => setFormData({...formData, description: e.target.value})} />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>PDF FAYL (IXTIYORIY)</label>
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      className={styles.fileInput}
+                      onChange={(e) => setPdfFile(e.target.files[0] || null)}
+                    />
                   </div>
                 </>
               )}

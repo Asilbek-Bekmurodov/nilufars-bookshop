@@ -19,7 +19,6 @@ export default function Login() {
   const dispath = useDispatch();
   const navigate = useNavigate();
 
-  if (isError) return <p>Xato xabari</p>;
   if (isLoading) return <Loader fullPage label="Kirish tekshirilmoqda..." />;
 
   function handleChange(e){
@@ -76,6 +75,7 @@ export default function Login() {
             <p>Kitob olamingizga kirish qiling</p>
 
             <form onSubmit={handleSubmit}>
+              {isError && <p style={{ color: "red", marginBottom: "8px" }}>Email yoki parol noto'g'ri</p>}
               <input
                 type="email"
                 placeholder="Email manzil"

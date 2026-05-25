@@ -21,13 +21,15 @@ import {
   FaUser,
   FaUserCircle,
   FaUserPlus,
+  FaSignOutAlt,
 } from 'react-icons/fa'
 import { GiBookshelf } from 'react-icons/gi'
 import { useState } from 'react'
 import { useSelector } from 'react-redux'
+import { useNavigate } from 'react-router'
 import styles from './Private.module.css'
 import { GrLanguage } from 'react-icons/gr'
-import { useGetUsersQuery } from '../../app/services/authApi'
+import { useGetUsersQuery, useGetBooksQuery } from '../../app/services/authApi'
 import Loader from '../Loader/Loader'
 
 const menuItems = [
@@ -204,7 +206,7 @@ const recommendationDetailBooks = recommendationBooks.map(
       rating: 4.6,
       vibe: `${genre} janridagi tavsiya qilingan kitob`,
       description,
-      reviews: ['Recommendation didimiku, o‘qishga arziydi.', 'Janriga mos, yengil va qiziqarli tanlov.'],
+      reviews: ["Recommendation uchun, oʻqishga arziydi.", "Janriga mos, yengil va qiziqarli tanlov."],
     },
   ],
 )
@@ -233,6 +235,19 @@ const streakRewards = [
   ['14 days', 'Free audiobook', 14],
   ['30 days', 'Legend badge', 30],
 ]
+
+const COVER_COLORS = {
+  red:     { from: '#4d1e1e', to: '#230d0d', accent: '#c47c7c' },
+  green:   { from: '#1e4d2b', to: '#0d2313', accent: '#7eb2a1' },
+  blue:    { from: '#1e2d4d', to: '#0d1323', accent: '#7ea1c4' },
+  purple:  { from: '#2d1e4d', to: '#150d23', accent: '#9b7ec4' },
+  yellow:  { from: '#4d3e1e', to: '#23180d', accent: '#c4a54e' },
+  orange:  { from: '#4d2e1e', to: '#23140d', accent: '#c4894e' },
+  brown:   { from: '#3a2010', to: '#1a0e06', accent: '#a07050' },
+  teal:    { from: '#1e4d45', to: '#0d2320', accent: '#7eb2aa' },
+  pink:    { from: '#4d1e35', to: '#230d18', accent: '#c47ca0' },
+  default: { from: '#3a2a1a', to: '#1a1008', accent: '#d4a84b' },
+}
 
 const heroContent = {
   Home: {
@@ -475,10 +490,18 @@ function Private() {
   const token = useSelector((state) => state.auth.token) || localStorage.getItem('token')
   const user = authUser || readStoredUser()
   const currentUserId = getUserId(user)
+  const navigate = useNavigate()
+
+  function handleLogout() {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    navigate('/login')
+  }
   const { data: usersData, isLoading: usersLoading, isError: usersError } = useGetUsersQuery(
     undefined,
     { skip: !token },
   )
+  const { data: apiBooks } = useGetBooksQuery(undefined, { skip: !token })
   const [activeMenu, setActiveMenu] = useState('Home')
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [languageOpen, setLanguageOpen] = useState(false)
@@ -1248,13 +1271,16 @@ function Private() {
   function renderBookDetail(book) {
     const [title, author, price, type, from, to, accent, pages, extraDetail] = book
     const detail = bookDetails[title] || extraDetail || {
-      age: '12+',
+      age: "12+",
       rating: 4.5,
       vibe: `${type} kitobi`,
-      description: 'Bu kitob o‘z janridagi qiziqarli mavzular va o‘qishga qulay hikoya uslubi bilan ajralib turadi.',
-      reviews: ['O‘qishga arziydigan kitob.', 'Janr muxlislari uchun mos tanlov.'],
+      description: "Bu kitob oʻz janridagi qiziqarli mavzular va oʻqishga qulay hikoya uslubi bilan ajralib turadi.",
+      reviews: ["Oʻqishga arziydigan kitob.", "Janr muxlislari uchun mos tanlov."],
     }
     const similarBooks = getSimilarBooks(book)
+    const apiBook = Array.isArray(apiBooks)
+      ? apiBooks.find(b => b.title?.toLowerCase() === title.toLowerCase())
+      : null
 
     return (
       <section className={styles.bookDetailPage}>
@@ -1302,6 +1328,18 @@ function Private() {
               >
                 {completedBookTitles.includes(title) ? 'Read' : 'Mark as read'}
               </button>
+              {apiBook?.pdfUrl ? (
+                <button
+                  className={styles.readNowBtn}
+                  onClick={() => navigate(`/read/${apiBook._id}`)}
+                >
+                  <FaBookOpen /> O'qish
+                </button>
+              ) : (
+                <button className={styles.readNowBtnDisabled} disabled>
+                  <FaBookOpen /> PDF yo'q
+                </button>
+              )}
             </div>
           </div>
         </section>
@@ -1497,12 +1535,14 @@ function Private() {
         </section>
 
         <div className={styles.sectionHead}>
-          <h2>{selectedCategory === 'All' ? 'All Books' : `${selectedCategory} Books`}</h2>
-          <button>Sort by: Popular</button>
+          <h2>{selectedCategory === 'All' ? 'Barcha kitoblar' : `${selectedCategory} kitoblari`}</h2>
+          <span className={styles.bookCount}>
+            {Array.isArray(apiBooks) ? apiBooks.filter(b => selectedCategory === 'All' || b.category === selectedCategory).length : 0} ta
+          </span>
         </div>
 
         <div className={styles.filters}>
-          {filters.map((filter) => (
+          {['All', ...Array.from(new Set((apiBooks || []).map(b => b.category).filter(Boolean)))].map((filter) => (
             <button
               className={selectedCategory === filter ? styles.filterActive : ''}
               key={filter}
@@ -1513,7 +1553,75 @@ function Private() {
           ))}
         </div>
 
-        <section className={styles.bookGrid}>{renderBookTiles(filteredBooks, 'home')}</section>
+        <section className={styles.bookGrid}>
+          {!Array.isArray(apiBooks) ? (
+            <div className={styles.apiLoading}>Kitoblar yuklanmoqda...</div>
+          ) : (() => {
+            const filtered = selectedCategory === 'All'
+              ? apiBooks
+              : apiBooks.filter(b => b.category === selectedCategory)
+            if (filtered.length === 0) return (
+              <div className={styles.apiEmpty}>
+                <FaBookOpen />
+                <p>{selectedCategory === 'All' ? 'Hali kitob qoʻshilmagan' : `${selectedCategory} janrida kitob yoʻq`}</p>
+              </div>
+            )
+            return filtered.map(book => {
+              const cover = COVER_COLORS[(book.coverColor || '').toLowerCase()] || COVER_COLORS.default
+              const initials = (book.title || '').split(' ').slice(0, 2).map(w => w[0]).join('')
+              const authorName = book.author?.name || book.authorName || 'Noma\'lum'
+              return (
+                <article
+                  key={book._id}
+                  className={styles.bookCard}
+                  onClick={() => book.pdfUrl ? navigate(`/read/${book._id}`) : null}
+                  style={{ cursor: book.pdfUrl ? 'pointer' : 'default' }}
+                >
+                  <div
+                    className={styles.cover}
+                    style={{ '--cover-from': cover.from, '--cover-to': cover.to, '--cover-accent': cover.accent }}
+                  >
+                    <button
+                      aria-label="save book"
+                      className={savedBookTitles.includes(book.title) ? styles.saved : ''}
+                      onClick={e => { e.stopPropagation(); toggleStoredBook(book.title, setSavedBookTitles, 'savedBookTitles') }}
+                    >
+                      <FaRegBookmark />
+                    </button>
+                    <span>{initials}</span>
+                  </div>
+                  <small>{book.category || 'Noma\'lum'} · {book.pageCount || '—'} pages</small>
+                  <h3>{book.title}</h3>
+                  <p>{authorName}</p>
+                  <div className={styles.cardBottom}>
+                    <span><FaStar /> {book.rating || '—'}</span>
+                    {book.badge && <span className={styles.apiBadge}>{book.badge}</span>}
+                  </div>
+                  <div className={styles.bookActions}>
+                    <button
+                      className={favoriteBookTitles.includes(book.title) ? styles.liked : ''}
+                      onClick={e => { e.stopPropagation(); toggleStoredBook(book.title, setFavoriteBookTitles, 'favoriteBookTitles') }}
+                    >
+                      {favoriteBookTitles.includes(book.title) ? <FaHeart /> : <FaRegHeart />}
+                    </button>
+                    {book.pdfUrl ? (
+                      <button
+                        className={styles.readNowBtn}
+                        onClick={e => { e.stopPropagation(); navigate(`/read/${book._id}`) }}
+                      >
+                        <FaBookOpen /> O'qish
+                      </button>
+                    ) : (
+                      <button disabled className={styles.readNowBtnDisabled}>
+                        <FaBookOpen /> PDF yo'q
+                      </button>
+                    )}
+                  </div>
+                </article>
+              )
+            })
+          })()}
+        </section>
 
         <section className={styles.audioPanel}>
           <div className={styles.audioTop}>
@@ -1830,6 +1938,13 @@ function Private() {
               </div>
             )}
           </div>
+          <button
+            className={styles.logoutBtn}
+            onClick={handleLogout}
+            title="Chiqish"
+          >
+            <FaSignOutAlt />
+          </button>
         </div>
       </header>
 

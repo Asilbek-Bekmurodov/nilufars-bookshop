@@ -3,6 +3,7 @@ import { AnimatePresence } from "framer-motion";
 import { lazy, Suspense } from "react";
 import Loader from "./components/Loader/Loader";
 import Dashboard from "./components/Dashboard/Dashboard";
+import BookReader from "./components/BookReader/BookReader";
 
 const Public = lazy(() => import("./components/Public/Public"));
 const Login = lazy(() => import("./components/Login/Login"));
@@ -20,6 +21,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/private" element={<Private />} />
           <Route path="/dashboard" element={<Dashboard/>} />
+          <Route path="/read/:id" element={<BookReader />} />
         </Routes>
       </AnimatePresence>
     </Suspense>

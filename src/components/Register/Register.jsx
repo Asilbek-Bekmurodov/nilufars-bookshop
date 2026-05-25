@@ -14,13 +14,16 @@ export default function Register() {
   const dispatch = useDispatch();
 
   const authors = [
-    "Ibn Sino", "Mirzo Ulugbek", "Alisher Navoi", "Odil Yoqubov", "Miroj Abdulloyev",
-    "Zulfiya", "Norali", "Abdulhamid Cho'pan", "Muhammad Ali", "Erkin Azam"
+    "Leo Tolstoy", "Fyodor Dostoevsky", "Ernest Hemingway", "Gabriel García Márquez",
+    "Franz Kafka", "Oscar Wilde", "Victor Hugo", "Mark Twain",
+    "Abdulla Qodiriy", "Cho'lpon", "Oybek", "G'afur G'ulom",
+    "Abdulla Oripov", "Erkin Vohidov", "Said Ahmad", "Muhammad Yusuf",
   ];
 
   const genres = [
-    "Fantastika", "Detektiv", "Romantika", "Fantaziya", "Tarixiy",
-    "Ko'rin", "Lirika", "Drama", "Sherali", "Ilmi"
+    "Fantastika", "Detektiv", "Romantika", "Fantaziya",
+    "Tarixiy roman", "Biografiya", "Sarguzasht", "Psixologik",
+    "Triller", "Komediya", "Drama", "Ilmiy",
   ];
 
   const [step, setStep] = useState(1);
@@ -55,10 +58,7 @@ export default function Register() {
         ? prev.favAuthors.filter((a) => a !== author)
         : [...prev.favAuthors, author],
     }));
-    setErrors((state) => ({
-      ...state,
-      favAuthors: "",
-    }));
+    setErrors((state) => ({ ...state, favAuthors: "" }));
   }
 
   function handleGenreChange(genre) {
@@ -68,10 +68,7 @@ export default function Register() {
         ? prev.favGenres.filter((g) => g !== genre)
         : [...prev.favGenres, genre],
     }));
-    setErrors((state) => ({
-      ...state,
-      favGenres: "",
-    }));
+    setErrors((state) => ({ ...state, favGenres: "" }));
   }
 
   function validateStep(currentStep) {
@@ -88,20 +85,14 @@ export default function Register() {
       }
       if (!formData.password.trim()) {
         newErrors.password = "Parolni kiriting";
-      } else if (formData.password.length < 6) {
-        newErrors.password = "Parol kamida 6 ta belgidan iborat bo‘lishi kerak";
+      } else if (formData.password.length < 8) {
+        newErrors.password = "Parol kamida 8 ta belgidan iborat bo’lishi kerak";
       }
     } else {
       if (!formData.age.trim()) {
         newErrors.age = "Yoshingizni kiriting";
       } else if (Number(formData.age) <= 0 || Number.isNaN(Number(formData.age))) {
-        newErrors.age = "Iltimos, to‘g‘ri yosh yozing";
-      }
-      if (formData.favAuthors.length === 0) {
-        newErrors.favAuthors = "Kamida bitta muallif tanlang";
-      }
-      if (formData.favGenres.length === 0) {
-        newErrors.favGenres = "Kamida bitta janr tanlang";
+        newErrors.age = "Iltimos, to’g’ri yosh yozing";
       }
     }
 
@@ -126,8 +117,9 @@ export default function Register() {
       return;
     }
 
+    const { favAuthors, favGenres, ...rest } = formData;
     const sendData = {
-      ...formData,
+      ...rest,
       age: Number(formData.age),
     };
 
@@ -278,14 +270,12 @@ export default function Register() {
                         {authors.map((author, idx) => (
                           <motion.label
                             key={idx}
-                            className={styles.checkboxLabel}
-                            whileHover={{ scale: 1.05 }}
+                            className={`${styles.checkboxLabel} ${formData.favAuthors.includes(author) ? styles.checkboxSelected : ""}`}
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.97 }}
+                            onClick={() => handleAuthorChange(author)}
                           >
-                            <input
-                              type="checkbox"
-                              checked={formData.favAuthors.includes(author)}
-                              onChange={() => handleAuthorChange(author)}
-                            />
+                            <span className={styles.checkMark}>{formData.favAuthors.includes(author) ? "✓" : ""}</span>
                             {author}
                           </motion.label>
                         ))}
@@ -298,14 +288,12 @@ export default function Register() {
                         {genres.map((genre, idx) => (
                           <motion.label
                             key={idx}
-                            className={styles.checkboxLabel}
-                            whileHover={{ scale: 1.05 }}
+                            className={`${styles.checkboxLabel} ${formData.favGenres.includes(genre) ? styles.checkboxSelected : ""}`}
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.97 }}
+                            onClick={() => handleGenreChange(genre)}
                           >
-                            <input
-                              type="checkbox"
-                              checked={formData.favGenres.includes(genre)}
-                              onChange={() => handleGenreChange(genre)}
-                            />
+                            <span className={styles.checkMark}>{formData.favGenres.includes(genre) ? "✓" : ""}</span>
                             {genre}
                           </motion.label>
                         ))}

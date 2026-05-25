@@ -312,7 +312,9 @@
   padding: 32px;
   border-radius: 20px;
   width: 100%;
-  max-width: 500px;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: 0 20px 40px rgba(127, 85, 57, 0.3);
   border: 1px solid rgba(161, 140, 120, 0.2);
   animation: scaleUp 0.2s ease-out;
@@ -396,6 +398,40 @@
 
 .submitBtn:hover {
   background: #64422b;
+}
+
+.formRow3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+.formRow2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.fileInput {
+  padding: 10px 12px;
+  border: 1px dashed rgba(161, 140, 120, 0.6);
+  border-radius: 8px;
+  background-color: #fcf8f2;
+  color: #291c0e;
+  font-size: 14px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.fileInput::-webkit-file-upload-button {
+  padding: 6px 14px;
+  background: #7f5539;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  margin-right: 10px;
 }
 /* --- OVERVIEW PANELI UCHUN STYLES --- */
 .statsGrid {

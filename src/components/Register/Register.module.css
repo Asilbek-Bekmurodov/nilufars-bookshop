@@ -142,39 +142,41 @@
 
 .checkboxGroup {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 12px;
-  margin-bottom: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 10px;
 }
 
 .checkboxLabel {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 16px;
+  padding: 10px 14px;
   border-radius: 12px;
   background: #f8f3ee;
   border: 2px solid rgba(117, 88, 72, 0.15);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   user-select: none;
+  font-size: 13px;
+  color: #5a4637;
 }
 
 .checkboxLabel:hover {
-  background: #f2e9e1;
-  border-color: #6d5c4d;
+  background: #f0e6db;
+  border-color: #9a7560;
 }
 
-.checkboxLabel input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-  accent-color: #7f5539;
-}
-
-.checkboxLabel:has(input[type="checkbox"]:checked) {
+.checkboxSelected {
+  background: #7f5539;
+  border-color: #7f5539;
+  color: #fff;
   font-weight: 600;
-  color: #6d5c4d;
+}
+
+.checkMark {
+  width: 16px;
+  font-size: 13px;
+  flex-shrink: 0;
 }
 
 .formBox input {
